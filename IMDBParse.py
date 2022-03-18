@@ -7,8 +7,9 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 import pandas as pd
 import tkinter
 from tkinter.filedialog import askopenfilename
+import os
 
-MOVIEDB_API_KEY = "API_KEY_HERE"
+MOVIEDB_API_KEY = os.environ.get('MOVIEDB_API_KEY')
 
 MoviesDF = pd.DataFrame(columns=['Title','Input Title','IMDB URL','IMDB Rating','Duration','Genres'])
 TV_ShowsDF = pd.DataFrame(columns=['Title','Input Title','IMDB URL','IMDB Rating','Genres'])
@@ -78,7 +79,7 @@ def write_dictionary(link):
 urls = soup.findAll('a')
 
 with tqdm(total=len(urls)) as pbar:
-    with ThreadPoolExecutor(max_workers=1) as executor:
+    with ThreadPoolExecutor(max_workers=10) as executor:
         futures = [executor.submit(write_dictionary,url) for url in urls]
         for future in as_completed(futures):
             result = future.result()
