@@ -6,7 +6,6 @@ from tqdm import tqdm
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import pandas as pd
 import tkinter as tk
-#import tkinter
 from tkinter.filedialog import askopenfilename
 import os
 
