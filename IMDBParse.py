@@ -11,8 +11,8 @@ import os
 
 MOVIEDB_API_KEY = os.environ.get('MOVIEDB_API_KEY')
 
-MoviesDF = pd.DataFrame(columns=['Title','IMDB URL','IMDB Rating','Duration','Genres'])
-TV_ShowsDF = pd.DataFrame(columns=['Title','IMDB URL','IMDB Rating','Genres'])
+MoviesDF = pd.DataFrame(columns=['Title','IMDB URL','IMDB Rating','IMDB ID','Duration','Genres'])
+TV_ShowsDF = pd.DataFrame(columns=['Title','IMDB URL','IMDB Rating','IMDB ID','Genres'])
 Non_IMDB_URLsDF = pd.DataFrame(columns=['URL'])
 ErrorsDF = pd.DataFrame(columns=['Input URL'])
 #PeopleDF = pd.DataFrame()
@@ -61,7 +61,8 @@ def get_details(id,type):
 
 def write_dictionary(link):
     if "imdb" in link:
-        query = "https://api.themoviedb.org/3/find/tt" + re.findall('\d+',link)[0]
+        imdbID = "tt" + re.findall('\d+',link)[0]
+        query = "https://api.themoviedb.org/3/find/" + imdbID
         params = {
             "api_key" : MOVIEDB_API_KEY,
             "language" : "en-US",
@@ -75,11 +76,11 @@ def write_dictionary(link):
             elif not x.get("person_results") and not x.get("tv_results"):
                 for i in x.get("movie_results"):
                     details = get_details(i.get("id"),"movie")
-                    MoviesDF.loc[MoviesDF.shape[0]] = [i.get("title"),link,str(i.get("vote_average")),details[0],details[1]]
+                    MoviesDF.loc[MoviesDF.shape[0]] = [i.get("title"),link,str(i.get("vote_average")),imdbID,details[0],details[1]]
             elif not x.get("person_results") and not x.get("movie_results"):
                 for i in x.get("tv_results"):
                     details = get_details(i.get("id"),"tv")
-                    TV_ShowsDF.loc[TV_ShowsDF.shape[0]] = [i.get("name"),link,str(i.get("vote_average")),details]
+                    TV_ShowsDF.loc[TV_ShowsDF.shape[0]] = [i.get("name"),link,str(i.get("vote_average")),imdbID,details]
             elif not x.get("movie_results") and not x.get("tv_results"):
                 return
         else:
@@ -88,7 +89,7 @@ def write_dictionary(link):
         Non_IMDB_URLsDF.loc[Non_IMDB_URLsDF.shape[0]] = [link]
 
 with tqdm(total=len(urls)) as pbar:
-    with ThreadPoolExecutor(max_workers=10) as executor:
+    with ThreadPoolExecutor(max_workers=5) as executor:
         futures = [executor.submit(write_dictionary,url) for url in urls]
         for future in as_completed(futures):
             result = future.result()
