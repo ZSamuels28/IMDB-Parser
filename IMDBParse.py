@@ -5,6 +5,8 @@ import re
 from tqdm import tqdm
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import pandas as pd
+import tkinter
+from tkinter.filedialog import askopenfilename
 
 MOVIEDB_API_KEY = "API_KEY_HERE"
 
@@ -14,7 +16,12 @@ Non_IMDB_URLsDF = pd.DataFrame(columns=['URL'])
 ErrorsDF = pd.DataFrame(columns=['Input Name','Input URL'])
 #PeopleDF = pd.DataFrame()
 
-with open("MovieList.html") as fp:
+print("Please select an HTML file")
+
+tkinter.Tk().withdraw() # we don't want a full GUI, so keep the root window from appearing
+filename = askopenfilename() # show an "Open" dialog box and return the path to the selected file
+
+with open(filename) as fp:
     soup = BeautifulSoup(fp, "html.parser")
 
 def get_details(id,type):
