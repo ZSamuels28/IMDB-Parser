@@ -14,14 +14,11 @@ Non_IMDB_URLsDF = pd.DataFrame(columns=['URL'])
 ErrorsDF = pd.DataFrame(columns=['Input Name','Input URL'])
 #PeopleDF = pd.DataFrame()
 
-with open("Movies.html") as fp:
+with open("MovieList.html") as fp:
     soup = BeautifulSoup(fp, "html.parser")
 
 def get_details(id,type):
-        if type == "Movie":
-            query = "https://api.themoviedb.org/3/movie/" + str(id)
-        elif type == "TV":
-            query = "https://api.themoviedb.org/3/tv/" + str(id)
+        query = "https://api.themoviedb.org/3/" + type + "/" + str(id)
         params = {
             "api_key" : MOVIEDB_API_KEY,
             "language" : "en-US"
@@ -30,12 +27,15 @@ def get_details(id,type):
         if response.status_code == 200:
             x = json.loads(response.text)
             genres = []
-            for i in x["genres"]:
-                genres.append(i["name"])
-            if type == "Movie":
-                return x["runtime"],genres
-            elif type == "TV":
+            for i in x.get("genres"):
+                genres.append(i.get("name"))
+            if type == "movie":
+                return x.get("runtime"),genres
+            elif type == "tv":
                 return genres
+            else:
+                print("Type Not Found")
+                return
         else:
             print("Error")
             return
@@ -51,17 +51,17 @@ def write_dictionary(link):
         response = requests.get(query,params=params)
         if response.status_code == 200:
             x = json.loads(response.text)
-            if not x["movie_results"] and not x["person_results"] and not x["tv_results"]:
+            if not x.get("movie_results") and not x.get("person_results") and not x.get("tv_results"):
                 ErrorsDF.loc[ErrorsDF.shape[0]] = [link.string,link.get('href')]
-            elif not x["person_results"] and not x["tv_results"]:
-                for i in x["movie_results"]:
-                    details = get_details(i["id"],"Movie")
-                    MoviesDF.loc[MoviesDF.shape[0]] = [i["title"],link.string,link.get('href'),str(i["vote_average"]),details[0],details[1]]
-            elif not x["person_results"] and not x["movie_results"]:
-                for i in x["tv_results"]:
-                    details = get_details(i["id"],"TV")
-                    TV_ShowsDF.loc[TV_ShowsDF.shape[0]] = [i["name"],link.string,link.get('href'),str(i["vote_average"]),details]
-            elif not x["movie_results"] and not x["tv_results"]:
+            elif not x.get("person_results") and not x.get("tv_results"):
+                for i in x.get("movie_results"):
+                    details = get_details(i.get("id"),"movie")
+                    MoviesDF.loc[MoviesDF.shape[0]] = [i.get("title"),link.string,link.get('href'),str(i.get("vote_average")),details[0],details[1]]
+            elif not x.get("person_results") and not x.get("movie_results"):
+                for i in x.get("tv_results"):
+                    details = get_details(i.get("id"),"tv")
+                    TV_ShowsDF.loc[TV_ShowsDF.shape[0]] = [i.get("name"),link.string,link.get('href'),str(i.get("vote_average")),details]
+            elif not x.get("movie_results") and not x.get("tv_results"):
                 return
         else:
             print("Error")
@@ -71,7 +71,7 @@ def write_dictionary(link):
 urls = soup.findAll('a')
 
 with tqdm(total=len(urls)) as pbar:
-    with ThreadPoolExecutor(max_workers=10) as executor:
+    with ThreadPoolExecutor(max_workers=1) as executor:
         futures = [executor.submit(write_dictionary,url) for url in urls]
         for future in as_completed(futures):
             result = future.result()
